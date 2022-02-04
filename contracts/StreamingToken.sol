@@ -76,19 +76,19 @@ contract BudgetNFT is ERC721, Ownable {
 
     // @dev creates the NFT, but it remains in the contract
 
-    function issueNFT(address receiver, int96 flowRate) internal {
-        details.push(
-            AdPlaceNFT({
-                owner: receiver,
-                renter: address(this),
-                fieldValue: "400x400",
-                requiredAmount: 2 ether,
-                timeline: 4 weeks,
-                tokenId: nextId
-            })
-        );
-        _issueNFT(receiver, flowRate);
-    }
+    // function issueNFT(address receiver, int96 flowRate) internal {
+    //     details.push(
+    //         AdPlaceNFT({
+    //             owner: receiver,
+    //             renter: address(this),
+    //             fieldValue: "400x400",
+    //             requiredAmount: 2 ether,
+    //             timeline: 4 weeks,
+    //             tokenId: nextId
+    //         })
+    //     );
+    //     _issueNFT(receiver, flowRate);
+    // }
 
     function _issueNFT(address receiver, int96 flowRate) internal {
         require(receiver != address(this), "Issue to a new address");
@@ -140,19 +140,33 @@ contract BudgetNFT is ERC721, Ownable {
         address newReceiver,
         uint256 tokenId
     ) internal override {
-        //blocks transfers to superApps - done for simplicity, but you could support super apps in a new version!
         require(
             !_host.isApp(ISuperApp(newReceiver)) ||
                 newReceiver == address(this),
             "New receiver can not be a superApp"
         );
+        //blocks transfers to superApps - done for simplicity, but you could support super apps in a new version!
+        if (oldReceiver != address(0)) {
+            // Prevents starting flow in first time mint
 
-        // @dev delete flowRate of this token from old receiver
-        // ignores minting case
-        _reduceFlow(oldReceiver, flowRates[tokenId]);
-        // @dev create flowRate of this token to new receiver
-        // ignores return-to-issuer case
-        _increaseFlow(newReceiver, flowRates[tokenId]);
+            // @dev delete flowRate of this token from old receiver
+            // ignores minting case
+            _reduceFlow(oldReceiver, flowRates[tokenId]);
+            // @dev create flowRate of this token to new receiver
+            // ignores return-to-issuer case
+            _increaseFlow(newReceiver, flowRates[tokenId]);
+        } else {
+            details.push(
+                AdPlaceNFT({
+                    owner: receiver,
+                    renter: address(0),
+                    fieldValue: "400x400",
+                    requiredAmount: 2 ether,
+                    timeline: 4 weeks,
+                    tokenId: tokenId
+                })
+            );
+        }
     }
 
     // Add a function that allows a token owner to split their token into two streams
